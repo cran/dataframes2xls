@@ -1,0 +1,76 @@
+  CSV2XLS: MANUAL
+
+Current csv2xls: 0.4
+
+# Copyright 2008 by Guido van Steen. Consult the LICENSE file of csv2xls for the terms of use. 
+
+Installation
+
+    * Install a version of Python for your system. 
+    * Download the tarball. 
+	* Uncompress the tarbal: "tar -xjvf csv2xls-<version>.bz2". 
+	* Cd to the umcompressed files: "cd csv2xls-<version>".
+	* To install csv2xls, run: "./configure; sudo make install". 
+	* csv2xls install in "/opt/csv2xls". A bash script called "csv2xls" will be installed in "/usr/bin". 
+	* To uninstall, run "sudo make uninstall". 
+
+There are also .deb and .rpm installation files available. They may be downloaded from http://sourceforge.net/projects/py-csv2xls/
+
+Running csv2xls 
+
+csv2xls may be invoked from the command prompt. The user may specify -h or --help as an argument, which should yield the following message: 
+
+Usage: csv2xls [options]
+
+Options:
+  -h, --help            show this help message and exit
+  -i INFILE_NAMES, --infile_names=INFILE_NAMES
+                        set infilenames
+  -o OUTFILE_NAME, --outfile_name=OUTFILE_NAME
+                        set outfilename
+  -s SHEET_NAMES, --sheet_names=SHEET_NAMES
+                        set sheetnames
+  -f FORMATS, --formats=FORMATS
+                        set colum or row formats
+  -t TRANSPOSE_FORMATTINGS, --transpose_formattings=TRANSPOSE_FORMATTINGS
+                        set transpose formattings
+  -n FONT_NAMES, --font_names=FONT_NAMES
+                        set font names
+  -m FONT_METRICS_FILES, --font_metrics_files=FONT_METRICS_FILES
+                        set font metrics files
+  -w COLUMN_WIDTHS, --column_widths=COLUMN_WIDTHS
+                        set colum widths
+  -r ASSUME_ROWNAMES, --assume_rownames=ASSUME_ROWNAMES
+                        set handling of rownames
+  -x ASSUME_COLNAMES, --assume_colnames=ASSUME_COLNAMES
+                        set handling of colnames
+  -c CONVERT_TO_FLOATS, --convert_to_floats=CONVERT_TO_FLOATS
+                        set conversion mode
+
+    * The -i argument allows the specification of comma-seperated data files. Multiple comma-seperated data files may be provided, which will all be represented by a separate xls sheet. At least one comma-seperated data file has to be specified. csv2xls assumes that each csv file has a comma-seperated header.  
+    * The -o argument allows the specification of the name of the resulting xls file. The user should specify exactly one xls filename. 
+    * The -i and the -o arguments are the only required arguments. csv2xls may for example be invoked as "csv2xls -i sheet1.csv,sheet2.csv,sheet3.csv -o newfile.xls" 
+
+The other command-line arguments are optional. Here is a short overview of the options currently available: 
+    * The -f option allows the user to format the resulting xls sheets. The -f option has to be followed by a "format string" . An example of such a string is "1:0::default:0.0%,default:general". This would (by default) format the first column of the first sheet as numbers rounded to zero decimals. The other columns would (by default) be presented as percentages rounded to one decimal. For example, a number such as 0.113 would be presented as "0" in the first column. In the second column it would be presented as "11.3%". The columns of the second sheet would all be presented according to the general xls format. If the "format string" does not contain a comma then the (single) provided "format string" will be assumed to apply to all the sheets. Otherwise the user has to provide formats, such as "1:0::default:0.0%", for all the sheets to be generated. If the -f option is not used all sheets will be formatted according to the general xls format. 
+    * The -t option allows formatting to be applied per row (instead of per column). The user may specify formatting to be applied per row by using "-t true" as a command-line argument. If some sheet(s) require per row formatting and other sheet(s) require column formatting the user should specify the -t option for all sheets, e.g. by providing an argument such as "-t true,false,true". If the -t option is not used all formatting will be applied per column (see the -f option). 
+    * The -s option allows the user to specify xls sheetnames. If the -s option is used, the number of sheetnames specified should be the number of data files specified with the -i argument. If the -s otion is not used sheet names will be based on the names of the comma-seperated data files instead. In the latter case paths leading up to these data file names would be ignored. The same applies to file name extensions. For example, if the -s option is not used a comma-seperated file such as "/foo/bar.csv" would be represented by a sheet with sheetname "bar". 
+    * The -n option allows the user to specify the font to be used. By default csv2xls will use Helvetica from the Adobe-Core35_AFMs-314 fonts. The latter fonts are included in the package. Other Adobe-Core35_AFMs-314 fonts may be selected as well. If a single font name is specified it will be used for all the xls sheets to be generated. If different sheets require different fonts they might be provided e.g. as "-n Helvetica,Times-Roman,Helvetica". In the latter case the number of font names provided would have to equal the number of xls sheets to be generated. 
+    * The -m option allows the specification of font metric files (.afm) of fonts not included with the Adobe-Core35_AFMs-314 fonts. Such files may for example be specified as "-m /path1/to/font1.afm,/path2/to/font2.afm,/path3/to/font3.afm". For fonts not included with the Adobe-Core35_AFMs-314 fonts the -m option should be combined with the -n option. 
+    * The -w option allows the specification of the column width for the resulting xls sheets. The default value is 48 points. If different sheets require different column widths they might be provided e.g. as "-c 48,97,48". 
+    * The -r argument may be used to treat the first colum of a csv file as a column with row names. This option is disabled by default. It may be enabled by "-r true". In the case of multiple sheets the user might e.g. invoke "-r true,false,true". Enabling the -r option causes the first column to be alligned to the left. Moreover, in that case the column width of the first column will be determined in such a way that it will fit the longest row name. For this purpose csv2xls uses the afm submodule of matplotlib. 
+    * The -x argument may be used to avoid column names in the resulting xls file, if the csv file(s) contain column names. This option is disabled by default so that the first row is treated as a column name. A specification, such as e.g. "- x false,true,false", would cause the first row of the second csv file not to be interpreted as a row with column names. 
+    * The -c option may be invoked with 3 different arguments: "default", "always" and "never". "-c default" makes sure that cells that look like digits will be stored as floats, whereas all other cells will be represented as strings. "-c always" tries to convert all cells into floats. Cells that cannot be converted into floats will in this case be represented by "NA" string. Finally "-c never" does not try to convert any cell into a float, In this case all cells will be written to the spreadsheet as character strings. The user may specify different conversion arguments for different sheets. He may e.g. specify "-c default,never,always". 
+
+Enhancements planned for future versions 
+
+    * get rid of bugs 
+    * add support for csv-like files using separators different from ",", such as tab-delimted files. 
+    * add support for xls dates. 
+    * add support for the formatting of single cells. 
+
+Feedback is appreciated 
+
+(c) Guido van Steen feels highly indebted for pyExcelerator, the afm submodule of matplotlib, and the Adobe-Core35_AFMs-314 fonts. These software packages have been bundled together with csv2xls. For the conditions under which these packages are licenced please refer to their respective LICENCE files. 
+
+
