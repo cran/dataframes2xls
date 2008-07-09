@@ -127,10 +127,15 @@ write.xls <- function(x, file, sh.names = "default", formats = "default", t.form
 	if (python != "python") { 
 		arg0 = paste(deparse(substitute(python)), " ", sep = "")
 	} 
+	test.python = system(paste(arg0, "-c pass", sep = ""))
+	if (test.python > 0) {
+		print(paste("Does '", python, "' exist, and is it in the path?", sep = "")) 
+		system.returnvalue = 1
+	}
 
 	arg1 = handle.pythonscript(py.script)
 	if (file.exists(arg1) == FALSE) {
-		print(paste("Python script ", arg1 ,"does not exist", sep = ""))
+		print(paste("Python script ", arg1 ,"does not exist.", sep = ""))
 		system.returnvalue = 1
 	}
 	else {
