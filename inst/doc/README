@@ -1,6 +1,6 @@
   CSV2XLS: MANUAL
 
-Current csv2xls: 0.4
+Current csv2xls: 0.4.2
 
 # Copyright 2008 by Guido van Steen. Consult the LICENSE file of csv2xls for the terms of use. 
 
@@ -72,5 +72,3 @@ Enhancements planned for future versions
 Feedback is appreciated 
 
 (c) Guido van Steen feels highly indebted for pyExcelerator, the afm submodule of matplotlib, and the Adobe-Core35_AFMs-314 fonts. These software packages have been bundled together with csv2xls. For the conditions under which these packages are licenced please refer to their respective LICENCE files. 
-
-

@@ -383,7 +383,7 @@ class xls(object):
 				else: 
 					c_xls = col_count + 1 # Due to row names 
 				if convert_to_float in ["default"]: 
-					if str(cell).strip().replace(".","").isdigit(): 
+					if str(cell).strip().replace(" ","").replace(".","").replace("-","").replace("+","").replace("E","").replace("e","").isdigit(): 
 						self.xls_object.xls_sheet.write(r_xls,c_xls,float(cell),current_style) 
 					else: # Not a digit 
 						self.xls_object.xls_sheet.write(r_xls,c_xls,cell,current_style) 
