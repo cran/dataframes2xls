@@ -53,7 +53,10 @@ class Reader:
         self.dump = dump
         self.STREAMS = {}
 
-        doc = file(filename, 'rb').read()
+        f = filename
+        if not hasattr(filename, 'read'):
+            f = file(filename, 'rb')
+        doc = f.read()
         self.header, self.data = doc[0:512], doc[512:]
         del doc
 
@@ -546,7 +549,9 @@ class XlsDoc:
         self.__build_sat()
         self.__build_header()
         
-        f = file(filename, 'wb')
+        f = filename
+        if not hasattr(filename, 'write'):
+            f = file(filename, 'wb')
         f.write(self.header)
         f.write(self.packed_MSAT_1st)
         f.write(stream)
@@ -554,7 +559,6 @@ class XlsDoc:
         f.write(self.packed_MSAT_2nd)
         f.write(self.packed_SAT)
         f.write(self.dir_stream)
-        f.close()
 
 
 if __name__ == '__main__':

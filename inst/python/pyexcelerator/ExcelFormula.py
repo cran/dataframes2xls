@@ -43,16 +43,31 @@
 __rev_id__ = """$Id: ExcelFormula.py,v 1.3 2005/08/11 08:53:48 rvk Exp $"""
 
 
-import ExcelFormulaParser, ExcelFormulaLexer
+import ExcelFormulaParser, ExcelFormulaLexer, ExcelMagic
 import struct
+from Deco import *
 from antlr import ANTLRException
 
+NoCalcs=0x00
+RecalcAlways=0x01
+CalcOnOpen=0x02
+PartOfShareFormula=0x08
+
+class ErrorCode(object):
+    error_msg = dict([(i[1], i[0]) for i in ExcelMagic.error_msg_by_code.items()])
+    
+    def __init__(self, s):
+        self.val = self.error_msg[s]
+    
+    def int(self): return self.val
 
 class Formula(object):
-    __slots__ = ["__init__", "text", "rpn", "__s", "__parser"]
+    __slots__ = ["__init__", "text", "rpn", "default", "opts", "__s", "__parser", "__default", "__opts"]
 
 
-    def __init__(self, s):
+    def __init__(self, s, default=None, opts=None):
+        self.__default = default
+        self.__opts = opts
         try:
             self.__s = s
             lexer = ExcelFormulaLexer.Lexer(s)
@@ -60,6 +75,24 @@ class Formula(object):
             self.__parser.formula()
         except ANTLRException:
             raise Exception, "can't parse formula " + s
+
+    def set_default(self, val):
+        self.__default = val
+
+    def get_default(self):
+        return self.__default
+
+    default = property(get_default, set_default)
+
+    @accepts(object, int)
+    def set_opts(self, value):
+        assert (int(value) & ~(0x0b)) == 0, "Invalid bits set for opts (%s)"%hex(int(value))
+        self.__opts = int(value)
+
+    def get_opts(self):
+        return self.__opts
+
+    opts = property(get_opts, set_opts)
 
     def text(self):
         return self.__s

@@ -79,15 +79,18 @@ class Row(object):
                  "__total_str",
                  "__xf_index",
                  "__has_default_format",
+                 "__has_default_height",
+                 "__height",
                  "__height_in_pixels",
+                 "__frmla_opts",
                  # public variables
-                 "height",
-                 "has_default_height",
                  "level",
                  "collapse",
                  "hidden",
                  "space_above",
-                 "space_below"]
+                 "space_below",
+                 "height",
+                 "frmla_opts",]
 
     #################################################################
     ## Constructor
@@ -102,10 +105,11 @@ class Row(object):
         self.__total_str = 0
         self.__xf_index = 0x0F
         self.__has_default_format = 0
+        self.__has_default_height = 0x01
+        self.__height = 0x00FF
         self.__height_in_pixels = 0x11
+        self.__frmla_opts = self.__parent.frmla_opts
         
-        self.height = 0x00FF
-        self.has_default_height = 0x00
         self.level = 0
         self.collapse = 0
         self.hidden = 0
@@ -169,7 +173,7 @@ class Row(object):
 
         
     def get_max_col(self):
-        return self.__min_col_idx
+        return self.__max_col_idx
 
         
     def get_str_count(self):
@@ -177,8 +181,8 @@ class Row(object):
 
 
     def get_row_biff_data(self):
-        height_options = (self.height & 0x07FFF) 
-        height_options |= (self.has_default_height & 0x01) << 15
+        height_options = (self.__height & 0x07FFF) 
+        height_options |= (self.__has_default_height & 0x01) << 15
 
         options =  (self.level & 0x07) << 0
         options |= (self.collapse & 0x01) << 4
@@ -204,7 +208,27 @@ class Row(object):
         return self.__idx
 
 
-    @accepts(object, int, (str, unicode, int, float, dt.datetime, dt.time, dt.date, ExcelFormula.Formula), Style.XFStyle)
+    def get_height(self):
+        return self.__height
+
+    def set_height(self, h):
+        if h == None:
+            self.__has_default_height = 0x01
+        else: self.__height = h
+    
+    height = property(get_height, set_height)
+
+    @accepts(object, int)
+    def set_frmla_opts(self, value):
+        assert (int(value) & ~(0x0b)) == 0, "Invalid bits set for frmla_opts (%s)"%hex(int(value))
+        self.__frmla_opts = int(value)
+
+    def get_frmla_opts(self):
+        return self.__frmla_opts
+
+    frmla_opts = property(get_frmla_opts, set_frmla_opts)
+
+    @accepts(object, int, (str, unicode, int, long, float, dt.datetime, dt.time, dt.date, ExcelFormula.Formula), (Style.XFStyle, type(None)))
     def write(self, col, label, style):
         self.__adjust_height(style)
         self.__adjust_bound_col_idx(col)
@@ -214,7 +238,7 @@ class Row(object):
                 self.__total_str += 1
             else:
                 self.__cells.extend([ Cell.BlankCell(self, col, self.__parent_wb.add_style(style)) ])
-        elif isinstance(label, (int, float)):
+        elif isinstance(label, (int, long, float)):
             self.__cells.extend([ Cell.NumberCell(self, col, self.__parent_wb.add_style(style), label) ])            
         elif isinstance(label, (dt.datetime, dt.time)):
             self.__cells.extend([ Cell.NumberCell(self, col, self.__parent_wb.add_style(style), self.__excel_date_dt(label)) ])

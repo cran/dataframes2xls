@@ -2,27 +2,13 @@
 
 # This R script makes use csv2xls version 0.3 
 
-list_of_libs = .libPaths()
-
-for (i in 1:length(list_of_libs)) {
-	if (file.exists(paste(list_of_libs[i], "/dataframes2xls", sep = "") ) == TRUE) {
-		this_lib_dir = paste(list_of_libs[i], "/dataframes2xls", sep = "") 
-	}
-}
-
-system.returnvalue = 0 # initialize (nothing is wrong yet) 
-
-default.pythonscript = paste(this_lib_dir, '/','python','/','csv2xls.py', sep = "")
-
 handle.pythonscript <- function(string) {
-	if (string == "default") {
-		tobe.returned = default.pythonscript
-	}
-	else {
-		tobe.returned = string 
-	}
-	return (tobe.returned) 
+   if (string == "default")
+       system.file("python", "csv2xls.py", package = "dataframes2xls")
+   else string
 }
+
+system.returnvalue = 0 # initialize (nothing is wrong yet)
 
 handle.sheetnames <- function(string , n) {
 	tobe.returned = '-s '

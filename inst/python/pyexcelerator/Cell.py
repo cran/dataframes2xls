@@ -45,7 +45,7 @@ __rev_id__ = """$Id: Cell.py,v 1.3 2005/08/11 08:53:48 rvk Exp $"""
 
 import struct
 import BIFFRecords
-
+from ExcelFormula import ErrorCode
 
 class StrCell(object):
     __slots__ = ["__init__", "get_biff_data",
@@ -79,6 +79,7 @@ class MulBlankCell(object):
                 "__parent", "__col1", "__col2", "__xf_idx"]
 
     def __init__(self, parent, col1, col2, xf_idx):
+        assert col1 < col2, '%d < %d is false'%(col1, col2)
         self.__parent = parent
         self.__col1 = col1
         self.__col2 = col2
@@ -113,9 +114,9 @@ class NumberCell(object):
             rk_encoded = (w3 << 16) | w2
             return BIFFRecords.RKRecord(self.__parent.get_index(), self.__idx, self.__xf_idx, rk_encoded).get()
 
-        if abs(self.__number) < 0x40000000 and int(self.__number) == self.__number:
+        if abs(self.__number) < 0x20000000 and int(self.__number) == self.__number:
             #print "30-bit integer RK"
-            rk_encoded = 2 | (int(self.__number) << 2)
+            rk_encoded = (2 | (int(self.__number) << 2)) & 0xffffffffL
             return BIFFRecords.RKRecord(self.__parent.get_index(), self.__idx, self.__xf_idx, rk_encoded).get()
 
         temp = self.__number*100
@@ -127,9 +128,9 @@ class NumberCell(object):
             rk_encoded = 1 | (w3 << 16) | w2
             return BIFFRecords.RKRecord(self.__parent.get_index(), self.__idx, self.__xf_idx, rk_encoded).get()
 
-        if abs(temp) < 0x40000000 and int(temp) == temp:
+        if abs(temp) < 0x20000000 and int(temp) == temp:
             #print "30-bit integer RK*100"
-            rk_encoded = 3 | (int(temp) << 2)
+            rk_encoded = (3 | (int(temp) << 2)) & 0xffffffffL
             return BIFFRecords.RKRecord(self.__parent.get_index(), self.__idx, self.__xf_idx, rk_encoded).get()
 
         #print "Number" 
@@ -152,18 +153,48 @@ class MulNumberCell(object):
 
 
 class FormulaCell(object):
-    __slots__ = ["__init__", "get_biff_data",
-                "__parent", "__idx", "__xf_idx", "__frmla"]
+    __slots__ = ["__init__", "get_biff_data", "result",
+                "__parent", "__idx", "__xf_idx", "__result", "__opts", "__frmla", "__str"]
 
     def __init__(self, parent, idx, xf_idx, frmla):
+        self.__str = None
         self.__parent = parent
         self.__idx = idx
         self.__xf_idx = xf_idx
+        self.result = frmla.default
+        self.__opts = frmla.opts != None and frmla.opts or self.__parent.frmla_opts
         self.__frmla = frmla
 
 
     def get_biff_data(self):
-        return BIFFRecords.FormulaRecord(self.__parent.get_index(), self.__idx, self.__xf_idx, self.__frmla.rpn()).get()
+        frmla_block_data = BIFFRecords.FormulaRecord(self.__parent.get_index(), self.__idx, self.__xf_idx, self.__result, self.__opts, self.__frmla.rpn()).get()
+        if self.__str:
+            frmla_block_data += BIFFRecords.StringRecord(self.__str).get()
+        return frmla_block_data
 
+    def set_result(self, value):
+        self.__result = self._convertToResult(value)
 
+    def get_result(self):
+        return self.__result
+
+    result = property(get_result, set_result)
+
+    def _convertToResult(self, val):
+        ret = 0
+        self.__str = ''
+        if isinstance(val, (int, float)):
+            ret = struct.pack('<d', val)
+        else:
+            if isinstance(val, bool):
+                ret = struct.pack('BxB3x', 0x01, val and 0x01 or 0x00)
+            elif isinstance(val, ErrorCode):
+                ret = struct.pack('BxB3x', 0x02, val.int())
+            elif (isinstance(val, (unicode, str)) and val) or bool(val):
+                ret = struct.pack('B5x', 0x00)
+                self.__str = unicode(val)
+            elif not val:
+                ret = struct.pack('B5x', 0x03)
+            ret += struct.pack('<H', 0xFFFF)
+        return struct.unpack('<Q', ret)[0]
 

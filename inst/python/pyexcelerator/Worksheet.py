@@ -82,8 +82,9 @@ import BIFFRecords
 import Bitmap
 import Formatting
 import Style
+import Utils
+import ExcelFormula
 from Deco import *
-
 
 class Worksheet(object):
     from Workbook import Workbook
@@ -105,6 +106,7 @@ class Worksheet(object):
         self.__rows = {}
         self.__cols = {}
         self.__merged_ranges = []
+        self.__links = {}
         self.__bmp_rec = ''
 
         self.__show_formulas = 0
@@ -149,12 +151,17 @@ class Worksheet(object):
         self.__row_default_height = 0x00FF
         self.__col_default_width = 0x0008
 
+        self.__default_row_hidden = 0
+        self.__default_row_space_above = 0
+        self.__default_row_space_below = 0
+
         self.__calc_mode = 1
         self.__calc_count = 0x0064
         self.__RC_ref_mode = 1
         self.__iterations_on = 0
         self.__delta = 0.001
         self.__save_recalc = 0
+        self.__frmla_opts = ExcelFormula.RecalcAlways | ExcelFormula.CalcOnOpen
 
         self.__print_headers = 0
         self.__print_grid = 0
@@ -619,10 +626,11 @@ class Worksheet(object):
 
     @accepts(object, int)
     def set_row_default_height(self, value):
-        self.__row_default_height = value
+        ''' set default row height in pixels '''
+        self.__row_default_height = Utils.px_to_tw(value)
 
     def get_row_default_height(self):
-        return self.__row_default_height
+        return Utils.tw_to_px(self.__row_default_height)
 
     row_default_height = property(get_row_default_height, set_row_default_height)
 
@@ -641,7 +649,7 @@ class Worksheet(object):
 
     @accepts(object, int)
     def set_calc_mode(self, value):
-        self.__calc_mode = value & 0x03
+        self.__calc_mode = (value == 0xFFFF and value) or value & 0x01
 
     def get_calc_mode(self):
         return self.__calc_mode
@@ -702,6 +710,18 @@ class Worksheet(object):
         return bool(self.__save_recalc)
 
     save_recalc = property(get_save_recalc, set_save_recalc)
+
+    #################################################################
+
+    @accepts(object, int)
+    def set_frmla_opts(self, value):
+        assert (int(value) & ~(0x0b)) == 0, "Invalid bits set for frmla_opts (%s)"%hex(int(value))
+        self.__frmla_opts = int(value)
+
+    def get_frmla_opts(self):
+        return self.__frmla_opts
+
+    frmla_opts = property(get_frmla_opts, set_frmla_opts)
 
     #################################################################
 
@@ -1142,6 +1162,36 @@ class Worksheet(object):
             result += self.__rows[r].get_str_count()
         return result
 
+    def set_column(self, col_range, width=None, format=Style.XFStyle()):
+        col_by_name = Utils.col_by_name
+        # width is in pixels
+        if col_range.find(':') > -1:
+            start_col, end_col = col_range.split(':')
+            scol_ind, ecol_ind = col_by_name(start_col), col_by_name(end_col)
+            col_range = range(scol_ind, ecol_ind+1)
+        else: col_range = [col_by_name(col_range)]
+        for i in col_range:
+            #~ if width: worksheet.col_default_width = width
+            if width:
+                self.col(i).width = (width*(2962/81.0))
+                #~ print 'setting col %i to width %i'%(i,width*(2962/81.0))
+            #~ if format: worksheet.col(i)._xf_index = worksheet.parent.add_style(format)
+            self.col(i).set_style(format)
+
+    def set_columns(self, col_range, width=None, format=Style.XFStyle()):
+        for r in col_range.split(','):
+            self.set_column(r, width, format)
+
+    def  write_cols(self, r, cstart, cdata, style=Style.XFStyle()):
+        for i, c in enumerate(cdata):
+            self.write(r, cstart+i, c, style)
+
+    def  print_area(self, rstart, rend, cstart, cend):
+        self.__parent.print_area(self.__name, rstart, rend, cstart, cend)
+
+    def set_link(self, x, y, url, target=None, description=None):
+        self.__links[(x,y)] = (url, target, description)
+
     ##################################################################
     ## BIFF records generation
     ##################################################################
@@ -1159,6 +1209,14 @@ class Worksheet(object):
             col_visible_levels = max([self.__cols[c].level for c in self.__cols]) + 1
 
         return BIFFRecords.GutsRecord(self.__row_gut_width, self.__col_gut_height, row_visible_levels, col_visible_levels).get()
+
+    def __default_row_height_rec(self):
+        options = 0x00
+        options = (0x00 & 0x01) << 0
+        options = (self.__default_row_hidden & 0x01) << 1
+        options = (self.__default_row_space_above & 0x01) << 2
+        options = (self.__default_row_space_below & 0x01) << 3
+        return BIFFRecords.DefaultRowHeight(options, self.__row_default_height).get()
 
     def __wsbool_rec(self):
         options = 0x00
@@ -1287,8 +1345,8 @@ class Worksheet(object):
 
     def __calc_settings_rec(self):
         result = ''
-        result += BIFFRecords.CalcModeRecord(self.__calc_mode & 0x01).get()
         result += BIFFRecords.CalcCountRecord(self.__calc_count & 0xFFFF).get()
+        result += BIFFRecords.CalcModeRecord(self.__calc_mode).get()
         result += BIFFRecords.RefModeRecord(self.__RC_ref_mode & 0x01).get()
         result += BIFFRecords.IterationRecord(self.__iterations_on & 0x01).get()
         result += BIFFRecords.DeltaRecord(self.__delta).get()
@@ -1300,8 +1358,8 @@ class Worksheet(object):
         result += BIFFRecords.PrintHeadersRecord(self.__print_headers).get()
         result += BIFFRecords.PrintGridLinesRecord(self.__print_grid).get()
         result += BIFFRecords.GridSetRecord(self.__grid_set).get()
-        result += BIFFRecords.HorizontalPageBreaksRecord(self.__horz_page_breaks).get()
-        result += BIFFRecords.VerticalPageBreaksRecord(self.__vert_page_breaks).get()
+        result += BIFFRecords.HorizontalPageBreaksRecord([type(b) == int and (b, 0, -1) or b for b in self.__horz_page_breaks]).get()
+        result += BIFFRecords.VerticalPageBreaksRecord([type(b) == int and (b, 0, -1) or b for b in self.__vert_page_breaks]).get()
         result += BIFFRecords.HeaderRecord(self.__header_str).get()
         result += BIFFRecords.FooterRecord(self.__footer_str).get()
         result += BIFFRecords.HCenterRecord(self.__print_centered_horz).get()
@@ -1344,11 +1402,20 @@ class Worksheet(object):
         result += BIFFRecords.PasswordRecord(self.__password).get()
         return result
 
+    def __hyperlink_table_rec(self):
+        result = ''
+        for (x, y), (url, target, description) in self.__links.items():
+            result += BIFFRecords.HyperlinkRecord(x, x, y, y, url, target=target, description=description).get()
+            if description is not None:
+                result += BIFFRecords.QuicktipRecord(x, x, y, y, description).get()
+        return result
+
     def get_biff_data(self):
         result = ''
         result += self.__bof_rec()
         result += self.__calc_settings_rec()
         result += self.__guts_rec()
+        result += self.__default_row_height_rec()
         result += self.__wsbool_rec()
         result += self.__colinfo_rec()
         result += self.__dimensions_rec()
@@ -1359,6 +1426,7 @@ class Worksheet(object):
         result += self.__bitmaps_rec()
         result += self.__window2_rec()
         result += self.__panes_rec()
+        result += self.__hyperlink_table_rec()
         result += self.__eof_rec()
 
         return result
