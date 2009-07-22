@@ -1,11 +1,12 @@
-# Copyright 2008 by Guido van Steen. Consult the LICENSE file of the csv2xls R package for the terms of use. 
+# Copyright 2008-2009 by Guido van Steen. Consult the LICENSE file of the csv2xls R package for the terms of use. 
 
-# This R script makes use csv2xls version 0.3 
+# This R script makes use csv2xls version 0.4.4 
 
 handle.pythonscript <- function(string) {
-   if (string == "default")
-       system.file("python", "csv2xls.py", package = "dataframes2xls")
-   else string
+	if (string == "default")
+		return (system.file("python", "csv2xls.py", package = "dataframes2xls"))
+	else 
+		return (string)
 }
 
 system.returnvalue = 0 # initialize (nothing is wrong yet)
@@ -111,7 +112,7 @@ write.xls <- function(x, file, sh.names = "default", formats = "default", t.form
 
 	arg0 = "python " 
 	if (python != "python") { 
-		arg0 = paste(deparse(substitute(python)), " ", sep = "")
+		arg0 = paste(python, " ", sep = "")
 	} 
 	test.python = system(paste(arg0, "-c pass", sep = ""))
 	if (test.python > 0) {
@@ -152,7 +153,6 @@ write.xls <- function(x, file, sh.names = "default", formats = "default", t.form
 	arg12 = handle.standard.argument("-c ", to.floats)
 	
 	csv2xls.cmd = paste(arg0,arg1,arg2,arg3,arg4,arg5,arg6,arg7,arg8,arg9,arg10,arg11,arg12,sep="")
-	#print (csv2xls.cmd)
 	if (system.returnvalue == 0) { 
 		system.returnvalue = system(csv2xls.cmd) 
 	}
