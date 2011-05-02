@@ -1,6 +1,6 @@
 # Copyright 2008-2009 by Guido van Steen. Consult the LICENSE file of the csv2xls R package for the terms of use. 
 
-# This R script makes use csv2xls version 0.4.4 
+# This R script makes use csv2xls version 0.4.2 
 
 handle.pythonscript <- function(string) {
 	if (string == "default")
@@ -81,6 +81,11 @@ write.xls <- function(x, file, sh.names = "default", formats = "default", t.form
 
 	x.deparsed = (deparse(substitute(x)))
 	s = unlist(strsplit(x.deparsed, ",", fixed = TRUE))
+	### add by Wei Zhang, 3rd May 2011
+	if(any(s==" ")) {
+		s <- s[-which(s==" ")]
+	}
+	#######
 	s = gsub("c\\(", "", s)
 	s = gsub("\\)", "", s)
 	s = gsub(" ", "", s)
@@ -163,4 +168,6 @@ write.xls <- function(x, file, sh.names = "default", formats = "default", t.form
 		print(system.returnvalue)
 	}
 }
+
+
 

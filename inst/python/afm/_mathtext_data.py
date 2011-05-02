@@ -14,6 +14,8 @@ for charcode, glyphind in items:
     print charcode, glyphind
 """
 
+from sets import Set
+
 latex_to_bakoma = {
     r'\oint'                : ('cmex10',  45),
     r'\bigodot'             : ('cmex10',  50),
@@ -37,8 +39,6 @@ latex_to_bakoma = {
     r'\}'                   : ('cmex10', 130),
     r'\leftangle'           : ('cmex10',  97),
     r'\rightangle'          : ('cmex10',  64),
-    r'\langle'              : ('cmex10',  97),
-    r'\rangle'              : ('cmex10',  64),
     r'\widehat'             : ('cmex10',  15),
     r'\widetilde'           : ('cmex10',  52),
 
@@ -90,6 +90,7 @@ latex_to_bakoma = {
     r'\phi'                 : ('cmmi10',  42),
     r'\chi'                 : ('cmmi10',  17),
     r'\psi'                 : ('cmmi10',  31),
+
     r'|'                    : ('cmsy10',  47),
     r'\|'                   : ('cmsy10',  47),
     r'('                    : ('cmr10',  119),
@@ -1760,54 +1761,6 @@ uni2type1 = dict([(v,k) for k,v in type12uni.items()])
 tex2uni = {
 'widehat': 0x0302,
 'widetilde': 0x0303,
-'langle': 0x27e8,
-'rangle': 0x27e9,
-'perp': 0x27c2,
-'neq': 0x2260,
-'Join': 0x2a1d,
-'leqslant': 0x2a7d,
-'geqslant': 0x2a7e,
-'lessapprox': 0x2a85,
-'gtrapprox': 0x2a86,
-'lesseqqgtr': 0x2a8b,
-'gtreqqless': 0x2a8c,
-'triangleeq': 0x225c,
-'eqslantless': 0x2a95,
-'eqslantgtr': 0x2a96,
-'backepsilon': 0x03f6,
-'precapprox': 0x2ab7,
-'succapprox': 0x2ab8,
-'fallingdotseq': 0x2252,
-'subseteqq': 0x2ac5,
-'supseteqq': 0x2ac6,
-'varpropto': 0x221d,
-'precnapprox': 0x2ab9,
-'succnapprox': 0x2aba,
-'subsetneqq': 0x2acb,
-'supsetneqq': 0x2acc,
-'lnapprox': 0x2ab9,
-'gnapprox': 0x2aba,
-'longleftarrow': 0x27f5,
-'longrightarrow': 0x27f6,
-'longleftrightarrow': 0x27f7,
-'Longleftarrow': 0x27f8,
-'Longrightarrow': 0x27f9,
-'Longleftrightarrow': 0x27fa,
-'longmapsto': 0x27fc,
-'leadsto': 0x21dd,
-'dashleftarrow': 0x290e,
-'dashrightarrow': 0x290f,
-'circlearrowleft': 0x21ba,
-'circlearrowright': 0x21bb,
-'leftrightsquigarrow': 0x21ad,
-'leftsquigarrow': 0x219c,
-'rightsquigarrow': 0x219d,
-'Game': 0x2141,
-'hbar': 0x0127,
-'hslash': 0x210f,
-'ldots': 0x2026,
-'vdots': 0x22ee,
-'doteqdot': 0x2251,
 'doteq': 8784,
 'partial': 8706,
 'gg': 8811,
@@ -1972,7 +1925,7 @@ tex2uni = {
 'napprox': 8777,
 'ast': 8727,
 'twoheaduparrow': 8607,
-'doublebarwedge': 8966,
+'doublebarwedge ?': 8966,
 'Sigma': 931,
 'leftharpoonaccent': 8400,
 'ntrianglelefteq': 8940,
@@ -2100,7 +2053,7 @@ tex2uni = {
 'propto': 8733,
 'pi': 960,
 'pm': 177,
-'dots': 0x2026,
+'dots': 8230,
 'nrightarrow': 8603,
 'textasciiacute': 180,
 'Doteq': 8785,
@@ -2346,8 +2299,7 @@ stix_virtual_fonts = {
             ],
         'it':
             [
-            (0x0030, 0x0039, 'rm', 0x1d7d8), # 0-9
-            (0x0041, 0x0042, 'it', 0xe154),  # A-B
+            (0x0041, 0x0041, 'it', 0xe154),  # A-B
             (0x0043, 0x0043, 'it', 0x2102),  # C (missing in beta STIX fonts)
             (0x0044, 0x0044, 'it', 0x2145),  # D
             (0x0045, 0x0047, 'it', 0xe156),  # E-G
@@ -2522,3 +2474,5 @@ stix_virtual_fonts = {
         (0x0061, 0x007a, 'rm', 0x1d68a)  # a-z
         ],
     }
+
+

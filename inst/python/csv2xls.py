@@ -1,8 +1,6 @@
 #!/usr/bin/env python 
 
-# Copyright 2008-2009 by Guido van Steen. Consult the LICENSE file of csv2xls for the terms of use. 
-
-# Version 0.4.4
+# Copyright 2008 by Guido van Steen. Consult the LICENSE file of csv2xls for the terms of use. 
 
 import sys 
 import os

@@ -75,42 +75,7 @@ __rev_id__ = """$Id: Formatting.py,v 1.4 2005/07/20 07:24:11 rvk Exp $"""
 
 import BIFFRecords
 
-colours = {
-        'aqua'    : 0x0F,
-        'cyan'    : 0x0F,
-        'black'   : 0x08,
-        'blue'    : 0x0C,
-        'brown'   : 0x10,
-        'magenta' : 0x0E,
-        'fuchsia' : 0x0E,
-        'gray'    : 0x17,
-        'grey'    : 0x17,
-        'green'   : 0x11,
-        'lime'    : 0x0B,
-        'navy'    : 0x12,
-        'orange'  : 0x35,
-        'pink'    : 0x21,
-        'purple'  : 0x14,
-        'red'     : 0x0A,
-        'silver'  : 0x16,
-        'white'   : 0x09,
-        'yellow'  : 0x0D,
-}
-
-def get_colour_val(c):
-    if c in colours:
-        return colours[c]
-    return c
-
-class CopyableObject(object):
-    # make sure to override this in the derived class if
-    # copying needs to be more complex
-    def copy(self):
-        cobj = self.__class__()
-        cobj.__dict__.update(self.__dict__)
-        return cobj
-
-class Font(CopyableObject):
+class Font(object):
     ESCAPEMENT_NONE         = 0x00
     ESCAPEMENT_SUPERSCRIPT  = 0x01
     ESCAPEMENT_SUBSCRIPT    = 0x02
@@ -185,7 +150,7 @@ class Font(CopyableObject):
         if self.shadow:
             options |= 0x020
             
-        colour_index = get_colour_val(self.colour_index)
+        colour_index = self.colour_index 
         weight = self._weight
         escapement = self.escapement
         underline = self.underline 
@@ -197,7 +162,7 @@ class Font(CopyableObject):
                     underline, family, charset, 
                     name)
 
-class Alignment(CopyableObject):
+class Alignment(object):
     HORZ_GENERAL                = 0x00
     HORZ_LEFT                   = 0x01
     HORZ_CENTER                 = 0x02
@@ -242,7 +207,7 @@ class Alignment(CopyableObject):
         self.inde = 0
         self.merg = 0
 
-class Borders(CopyableObject):
+class Borders(object):
     NO_LINE = 0x00
     THIN    = 0x01
     MEDIUM  = 0x02
@@ -280,25 +245,17 @@ class Borders(CopyableObject):
         self.need_diag1 = self.NO_NEED_DIAG1
         self.need_diag2 = self.NO_NEED_DIAG2
 
-class Pattern(CopyableObject):
+class Pattern(object):
     # patterns 0x00 - 0x12
     NO_PATTERN      = 0x00 
     SOLID_PATTERN   = 0x01 
     
     def __init__(self):
         self.pattern = self.NO_PATTERN
-        self._pattern_fore_colour = 0x40
-        self._pattern_back_colour = 0x41
-    
-    def get_pattern_fore_colour(self): return self._pattern_fore_colour
-    def set_pattern_fore_colour(self, c): self._pattern_fore_colour = get_colour_val(c)
-    pattern_fore_colour = property(get_pattern_fore_colour, set_pattern_fore_colour)
-    
-    def get_pattern_back_colour(self): return self._pattern_back_colour
-    def set_pattern_back_colour(self, c): self._pattern_back_colour = get_colour_val(c)
-    pattern_back_colour = property(get_pattern_back_colour, set_pattern_back_colour)
-
-class Protection(CopyableObject):
+        self.pattern_fore_colour = 0x40
+        self.pattern_back_colour = 0x41
+        
+class Protection(object):
     def __init__(self):
         self.cell_locked = 1
         self.formula_hidden = 0
@@ -318,3 +275,4 @@ if __name__ == '__main__':
         f = file(filename, 'wb')
         f.write(font.get_biff_record().get_data())
         f.close
+        
